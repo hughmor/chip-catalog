@@ -6,7 +6,12 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><h1 id="title">Chip Catalog</h1><input id="q" type="search" placeholder="Filter chips"></header>
+<header><h1 id="title">Chip Catalog</h1><input id="q" type="search" placeholder="Filter chips">
+<select id="sort">
+  <option value="name">Name (A–Z)</option>
+  <option value="new">Run date (newest first)</option>
+  <option value="old">Run date (oldest first)</option>
+</select></header>
 <main id="grid"></main>
 <script>
 const enc = encodeURIComponent;
@@ -18,6 +23,7 @@ const enc = encodeURIComponent;
     const a = document.createElement('a');
     a.className = 'card';
     a.href = `chip.html?id=${enc(c.id)}`;
+    a.chip = c;
     a.dataset.text = [c.id, c.internal_name, c.designation, c.technology, c.run, c.notes, ...c.authors].join(' ').toLowerCase();
     a.innerHTML = '<img loading="lazy" alt=""><div class="meta"><div class="name"></div><div class="sub"></div></div>';
     a.querySelector('img').src = `/api/chips/${enc(c.id)}/thumb.png?v=${c.mtime}-${enc(c.technology)}`;
@@ -25,6 +31,17 @@ const enc = encodeURIComponent;
     a.querySelector('.sub').textContent = [c.designation, c.technology, c.run].filter(Boolean).join(' · ') || c.file;
     grid.append(a);
   }
+  // Chips with no run date go last.
+  const byName = (a, b) => a.chip.internal_name.localeCompare(b.chip.internal_name, undefined, { numeric: true, sensitivity: 'base' });
+  const byRun = dir => (a, b) => (!a.chip.run - !b.chip.run) || dir * a.chip.run.localeCompare(b.chip.run) || byName(a, b);
+  const sorts = { name: byName, new: byRun(-1), old: byRun(1) };
+  const sort = document.getElementById('sort');
+  sort.value = localStorage.sort in sorts ? localStorage.sort : 'name';
+  sort.onchange = () => {
+    localStorage.sort = sort.value;
+    grid.append(...[...grid.children].sort(sorts[sort.value]));
+  };
+  sort.onchange();
   document.getElementById('q').oninput = e => {
     const q = e.target.value.toLowerCase();
     for (const a of grid.children) a.classList.toggle('hidden', !a.dataset.text.includes(q));
