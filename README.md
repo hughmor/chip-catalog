@@ -4,16 +4,47 @@ Chip Catalog is a web catalog of chip layouts. The main page shows a preview of 
 
 The app holds no lab data. All data lives in one catalog directory. Another lab can use the app with its own catalog directory.
 
-## Set up and start
+## Set up for your organisation
 
-1. Make a Python environment: `python3 -m venv .venv`
-2. Install KLayout: `.venv/bin/pip install -r requirements.txt`
-3. Start the server: `.venv/bin/python server.py --catalog catalog`
-4. Open http://127.0.0.1:8000/ in a browser.
+This repository holds only the app. Git ignores the `catalog/` directory, so your layouts and chip records never go into this repository.
 
-To share the catalog on the lab network, add `--host 0.0.0.0`. The server has no login. Anyone who can reach the port can edit records. Use it only on a trusted network.
+1. Fork or clone this repository.
+2. Make a Python environment: `python3 -m venv .venv`
+3. Install KLayout: `.venv/bin/pip install -r requirements.txt`
+4. Copy the example catalog: `cp -r catalog.example catalog`
+5. Set your title in `catalog/config.json`.
+6. Copy your layout files into `catalog/gds/`.
+7. Copy your KLayout layer properties into `catalog/tech/`, one `<technology>.lyp` for each technology.
+8. Write a wafer map for each wafer layout in `catalog/wafermaps/`. Use `example.json` as a model.
+9. Start the server: `.venv/bin/python server.py`
+10. Open http://127.0.0.1:8000/ in a browser.
 
-To check the server, run `.venv/bin/python test_server.py`. The test makes its own small layout and does not use the catalog.
+The server uses `./catalog` by default. To use a different directory, give `--catalog DIR` or set the `CHIP_CATALOG` environment variable.
+
+To share the catalog on your network, add `--host 0.0.0.0`. The server has no login. Anyone who can reach the port can edit records. Use it only on a trusted network.
+
+### Keep your catalog in version control
+
+Your catalog is data, not app code. To keep a history of chip records, make the catalog a separate private repository:
+
+1. Go to the catalog directory: `cd catalog`
+2. Make a repository: `git init`
+3. Commit the records and push them to a private remote of your organisation.
+
+Layout files are large. Use Git LFS for `gds/`, or keep `gds/` out of the catalog repository.
+
+### Get app updates
+
+If you forked this repository, add it as a remote, then merge from it:
+
+1. Add the remote: `git remote add upstream <URL of this repository>`
+2. Merge the updates: `git pull upstream main`
+
+The catalog directory is not part of the app repository, so updates do not change your data.
+
+### Check the server
+
+Run `.venv/bin/python test_server.py`. The test makes its own small layout and does not use the catalog.
 
 ## Use the viewer
 
