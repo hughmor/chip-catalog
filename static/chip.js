@@ -194,29 +194,73 @@ $('#addwafer').onclick = () => {
   $('#wafers-edit').append(waferRow({ name: `Wafer ${$('#wafers-edit').children.length + 1}`, map: Object.keys(cfg.wafermaps)[0] }));
 };
 
+function infoRow(term, ...values) {
+  const dd = el('dd');
+  values = values.filter(v => v);
+  if (values.length) dd.append(...values);
+  else dd.append(el('span', 'msg', '—'));
+  return [el('dt', '', term), dd];
+}
+
 function fillInfo() {
   document.title = $('#name').textContent = chip.internal_name;
   for (const k of ['internal_name', 'designation', 'technology', 'run', 'github', 'notes']) form.elements[k].value = chip[k];
   $('#authors-edit').replaceChildren(...chip.authors.map(a => authorRow(a)));
-  $('#ghlink').textContent = chip.github ? 'open' : '';
-  $('#ghlink').href = chip.github || '#';
-  $('#lyp').textContent = chip.lyp ? ` layers: ${chip.lyp}` : ' layers: default colours';
-  $('#file').textContent = chip.file;
-  $('#top').textContent = chip.top;
+  const layers = chip.lyp ? `layers: ${chip.lyp}` : 'layers: default colours';
+  $('#lyp').textContent = ` ${layers}`;
   $('#wafers-edit').replaceChildren(...chip.wafers.map(waferRow));
+  saved = JSON.stringify(formBody());
+
+  let gh = null;
+  if (chip.github) {
+    gh = el('a', '', chip.github.replace(/^https?:\/\//, ''));
+    Object.assign(gh, { href: chip.github, target: '_blank', rel: 'noopener' });
+  }
+  const run = chip.run && new Date(`${chip.run}-01T00:00`).toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+  $('#infoview').replaceChildren(
+    ...infoRow('Official designation', chip.designation),
+    ...infoRow('Foundry / technology', chip.technology && `${chip.technology} `, el('span', 'msg', layers)),
+    ...infoRow('Run', run),
+    ...infoRow('GitHub repository', gh),
+    ...infoRow('Authors', ...chip.authors.map(a => el('div', '', a))),
+    ...infoRow('Notes', chip.notes && el('div', 'notes', chip.notes)),
+    ...infoRow('Wafers', ...chip.wafers.map(w => el('div', '', `${w.name} (${cfg.wafermaps[w.map]?.name || w.map})`))),
+    ...infoRow('File', `${chip.file}, top cell ${chip.top}`),
+  );
 }
 
-form.onsubmit = async e => {
-  e.preventDefault();
-  const f = form.elements, tech = chip.technology;
-  const body = {
+function formBody() {
+  const f = form.elements;
+  return {
     internal_name: f.internal_name.value.trim(), designation: f.designation.value.trim(),
     technology: f.technology.value.trim(), run: f.run.value.trim(), github: f.github.value.trim(), notes: f.notes.value,
     authors: [...document.querySelectorAll('#authors-edit input')].map(i => i.value.trim()).filter(Boolean),
     wafers: [...$('#wafers-edit').children].map(r => ({ id: r.dataset.id || undefined, name: r.children[0].value.trim(), map: r.children[1].value })),
   };
+}
+
+// Read-only by default. Edit mode unlocks the chip record and the die status.
+let editing = false, saved = '';
+function setEditing(on) {
+  if (!on && JSON.stringify(formBody()) !== saved && !confirm('Discard the changes that you did not save?')) return;
+  if (!on) fillInfo();
+  editing = on;
+  document.body.classList.toggle('editing', on);
+  $('#edit').textContent = on ? 'Done' : 'Edit';
+  $('#edit').classList.toggle('on', on);
+  $('#infoview').classList.toggle('hidden', on);
+  form.classList.toggle('hidden', !on);
+  drawWafer();
+}
+$('#edit').onclick = () => setEditing(!editing);
+$('#cancel').onclick = () => fillInfo();
+window.addEventListener('beforeunload', e => { if (editing && JSON.stringify(formBody()) !== saved) e.preventDefault(); });
+
+form.onsubmit = async e => {
+  e.preventDefault();
+  const tech = chip.technology;
   try {
-    await api(API, body);
+    await api(API, formBody());
     chip = await api(API);
     fillInfo();
     fillWafers();
@@ -260,8 +304,9 @@ function drawWafer() {
   for (const l of labels) counts[dieOf(w, l).status] = (counts[dieOf(w, l).status] || 0) + 1;
 
   const legend = [['cycle', null, 'Click cycles status']].concat(statuses().map(s => [s, cfg.statuses[s], `Click sets "${s}"`]));
-  $('#legend').replaceChildren(...legend.map(([s, colour, tip]) => {
-    const b = el('button', s === brush ? 'on' : '');
+  $('#readhint').classList.toggle('hidden', editing);
+  $('#legend').replaceChildren(...legend.filter(([s]) => editing || s !== 'cycle').map(([s, colour, tip]) => {
+    const b = el(editing ? 'button' : 'span', editing && s === brush ? 'on legendkey' : 'legendkey');
     b.title = tip;
     if (colour) { const sw = el('span', 'swatch'); sw.style.background = colour; b.append(sw); }
     b.append(colour ? `${s} (${counts[s] || 0})` : 'cycle');
@@ -296,7 +341,7 @@ function drawWafer() {
     text.setAttribute('x', (c - ncols / 2 + 0.5) * dw);
     text.setAttribute('y', (r - nrows / 2 + 0.5) * dh);
     text.textContent = label;
-    rect.onclick = () => {
+    if (editing) rect.onclick = () => {
       const s = statuses();
       setDie(label, { status: brush === 'cycle' ? s[(s.indexOf(d.status) + 1) % s.length] : brush });
     };
@@ -306,14 +351,21 @@ function drawWafer() {
   $('#wafermap').replaceChildren(svg);
 
   $('#dietable tbody').replaceChildren(...labels.map(label => {
-    const d = dieOf(w, label), tr = el('tr'), st = el('select'), notes = el('input');
+    const d = dieOf(w, label), tr = el('tr'), td = x => { const t = el('td'); t.append(x); return t; };
+    if (!editing) {
+      const st = el('span', '', d.status);
+      st.style.borderLeft = `6px solid ${cfg.statuses[d.status] || '#666'}`;
+      st.style.paddingLeft = '4px';
+      tr.append(td(label), td(st), td(d.notes));
+      return tr;
+    }
+    const st = el('select'), notes = el('input');
     for (const s of statuses()) st.append(new Option(s, s));
     st.value = d.status;
     st.style.borderLeft = `6px solid ${cfg.statuses[d.status]}`;
     st.onchange = () => setDie(label, { status: st.value });
     notes.value = d.notes;
     notes.onchange = () => setDie(label, { notes: notes.value });
-    const td = x => { const t = el('td'); t.append(x); return t; };
     tr.append(td(label), td(st), td(notes));
     return tr;
   }));

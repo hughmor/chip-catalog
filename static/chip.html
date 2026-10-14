@@ -8,7 +8,7 @@
 <body class="viewer">
 <aside id="panel">
   <a href="/">&larr; Catalog</a>
-  <h1 id="name"></h1>
+  <div class="titlebar"><h1 id="name"></h1><button id="edit" title="Make the chip record and die status editable">Edit</button></div>
   <nav class="tabs">
     <button data-tab="info" class="on">Info</button>
     <button data-tab="cells">Cells</button>
@@ -16,13 +16,14 @@
   </nav>
 
   <section id="tab-info">
-    <form id="info">
+    <dl id="infoview"></dl>
+    <form id="info" class="hidden">
       <label class="f">Internal name <input name="internal_name"></label>
       <label class="f">Official (foundry / MPW) designation <input name="designation"></label>
       <label class="f">Foundry / technology <input name="technology" list="techs"><span id="lyp"></span></label>
       <datalist id="techs"></datalist>
       <label class="f">Run (month / year) <input name="run" type="month" placeholder="YYYY-MM" pattern="\d{4}-\d{2}"></label>
-      <label class="f">GitHub repository <a id="ghlink" target="_blank" rel="noopener"></a><input name="github" type="url" placeholder="https://github.com/..."></label>
+      <label class="f">GitHub repository <input name="github" type="url" placeholder="https://github.com/..."></label>
       <div class="f">Authors</div>
       <div id="authors-edit"></div>
       <div class="row"><button type="button" id="addauthor" title="Add an author">+</button></div>
@@ -30,8 +31,7 @@
       <div class="f">Wafers <small>(none for a one-off die)</small></div>
       <div id="wafers-edit"></div>
       <div class="row"><button type="button" id="addwafer">+ Add wafer</button></div>
-      <p><button type="submit">Save</button><span class="msg" id="savemsg"></span></p>
-      <p class="msg">File: <span id="file"></span>, top cell: <span id="top"></span></p>
+      <p><button type="submit">Save</button> <button type="button" id="cancel">Cancel</button><span class="msg" id="savemsg"></span></p>
     </form>
   </section>
 
@@ -48,6 +48,7 @@
         <button data-mode="map" class="on">Map</button><button data-mode="table">Table</button>
       </div>
       <div id="legend"></div>
+      <p id="readhint" class="msg">Click Edit to change die status and notes.</p>
       <div id="wafermap"></div>
       <table id="dietable" class="hidden"><thead><tr><th>Die</th><th>Status</th><th>Notes</th></tr></thead><tbody></tbody></table>
     </div>

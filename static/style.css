@@ -44,12 +44,20 @@ textarea { min-height: 120px; resize: vertical; }
 .cellname.sel { background: #0aa; color: #000; }
 .count { color: #8a9099; }
 #legend { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
-#legend button { display: flex; gap: 4px; align-items: center; font-size: 12px; }
+#legend .legendkey { display: flex; gap: 4px; align-items: center; font-size: 12px; }
 .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
 #wafermap svg { width: 100%; height: auto; }
-#wafermap rect { cursor: pointer; stroke: #15171a; stroke-width: 0.4; }
+body.editing #wafermap rect { cursor: pointer; }
+#wafermap rect { stroke: #15171a; stroke-width: 0.4; }
 #wafermap rect.noted { stroke: #fff; stroke-width: 0.8; }
 #wafermap text { pointer-events: none; fill: #000; text-anchor: middle; dominant-baseline: central; }
 #dietable { width: 100%; border-collapse: collapse; }
 #dietable td { padding: 2px; }
 #dietable input { width: 100%; }
+#panel .titlebar { display: flex; gap: 8px; align-items: center; }
+#panel .titlebar h1 { flex: 1; }
+#infoview { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; margin: 0; }
+#infoview dt { color: #9aa0a8; font-size: 12px; padding-top: 2px; }
+#infoview dd { margin: 0; word-break: break-word; }
+#infoview .notes { white-space: pre-wrap; }
+#legend span.legendkey { padding: 4px 6px; }
