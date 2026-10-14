@@ -69,7 +69,14 @@ You can keep the catalog directory in its own git repository. The JSON files are
 
 ### Layout files
 
-One layout file is one chip. The chip ID is the file name without the extension. To add a chip, copy its layout file into `gds/` and reload the catalog page. The server makes the chip record when a user first saves it.
+One layout file is one chip. The chip ID is the file name without the extension. Two chips cannot have the same ID, even with different letter case.
+
+To add a chip, do one of these steps:
+
+- On the catalog page, click **+ Add chip**. Select the layout file, fill in the record, and click **Add chip**.
+- Copy the layout file into `gds/` and reload the catalog page. The server makes the chip record when a user first saves it.
+
+To remove a chip, stop the server. Then delete its layout file from `gds/` and its record from `chips/`.
 
 The viewer shows the top cell with the largest area. A file can have more than one top cell, but the viewer shows only that one.
 

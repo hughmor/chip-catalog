@@ -1,23 +1,8 @@
 const $ = s => document.querySelector(s);
-const enc = encodeURIComponent;
 const ID = new URLSearchParams(location.search).get('id');
 const API = `/api/chips/${enc(ID)}`;
 const SVG = 'http://www.w3.org/2000/svg';
 let chip, cfg;
-
-async function api(url, body) {
-  const r = await fetch(url, body && { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error);
-  return data;
-}
-
-function el(tag, cls, text) {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (text != null) e.textContent = text;
-  return e;
-}
 
 // ---------- GDS viewer ----------
 // The server renders the visible region with KLayout. While a new image loads, the old one is scaled to the new view.
@@ -155,45 +140,6 @@ $('#cellq').oninput = e => {
 // ---------- info ----------
 const form = $('#info');
 
-function waferRow(w) {
-  const row = el('div', 'row');
-  row.dataset.id = w.id || '';
-  const name = el('input');
-  name.value = w.name;
-  name.placeholder = 'Wafer name, e.g. undercut';
-  const map = el('select');
-  for (const [k, m] of Object.entries(cfg.wafermaps)) map.append(new Option(m.name || k, k));
-  map.value = w.map;
-  const rm = el('button', '', '×');
-  rm.type = 'button';
-  rm.title = 'Remove this wafer and its die records';
-  rm.onclick = () => { if (confirm(`Remove wafer "${name.value}" and its die records when you save?`)) row.remove(); };
-  row.append(name, map, rm);
-  return row;
-}
-
-function authorRow(name = '') {
-  const row = el('div', 'row'), input = el('input'), rm = el('button', '', '×');
-  input.value = name;
-  input.placeholder = 'Author name';
-  rm.type = 'button';
-  rm.title = 'Remove this author';
-  rm.onclick = () => row.remove();
-  row.append(input, rm);
-  return row;
-}
-
-$('#addauthor').onclick = () => {
-  const row = authorRow();
-  $('#authors-edit').append(row);
-  row.firstChild.focus();
-};
-
-$('#addwafer').onclick = () => {
-  if (!Object.keys(cfg.wafermaps).length) return alert('The catalog has no wafer maps. Add a file to wafermaps/ first.');
-  $('#wafers-edit').append(waferRow({ name: `Wafer ${$('#wafers-edit').children.length + 1}`, map: Object.keys(cfg.wafermaps)[0] }));
-};
-
 function infoRow(term, ...values) {
   const dd = el('dd');
   values = values.filter(v => v);
@@ -204,12 +150,9 @@ function infoRow(term, ...values) {
 
 function fillInfo() {
   document.title = $('#name').textContent = chip.internal_name;
-  for (const k of ['internal_name', 'designation', 'technology', 'run', 'github', 'notes']) form.elements[k].value = chip[k];
-  $('#authors-edit').replaceChildren(...chip.authors.map(a => authorRow(a)));
+  fillChipForm(form, cfg, chip);
+  saved = JSON.stringify(readChipForm(form));
   const layers = chip.lyp ? `layers: ${chip.lyp}` : 'layers: default colours';
-  $('#lyp').textContent = ` ${layers}`;
-  $('#wafers-edit').replaceChildren(...chip.wafers.map(waferRow));
-  saved = JSON.stringify(formBody());
 
   let gh = null;
   if (chip.github) {
@@ -229,20 +172,10 @@ function fillInfo() {
   );
 }
 
-function formBody() {
-  const f = form.elements;
-  return {
-    internal_name: f.internal_name.value.trim(), designation: f.designation.value.trim(),
-    technology: f.technology.value.trim(), run: f.run.value.trim(), github: f.github.value.trim(), notes: f.notes.value,
-    authors: [...document.querySelectorAll('#authors-edit input')].map(i => i.value.trim()).filter(Boolean),
-    wafers: [...$('#wafers-edit').children].map(r => ({ id: r.dataset.id || undefined, name: r.children[0].value.trim(), map: r.children[1].value })),
-  };
-}
-
 // Read-only by default. Edit mode unlocks the chip record and the die status.
 let editing = false, saved = '';
 function setEditing(on) {
-  if (!on && JSON.stringify(formBody()) !== saved && !confirm('Discard the changes that you did not save?')) return;
+  if (!on && JSON.stringify(readChipForm(form)) !== saved && !confirm('Discard the changes that you did not save?')) return;
   if (!on) fillInfo();
   editing = on;
   document.body.classList.toggle('editing', on);
@@ -254,13 +187,13 @@ function setEditing(on) {
 }
 $('#edit').onclick = () => setEditing(!editing);
 $('#cancel').onclick = () => fillInfo();
-window.addEventListener('beforeunload', e => { if (editing && JSON.stringify(formBody()) !== saved) e.preventDefault(); });
+window.addEventListener('beforeunload', e => { if (editing && JSON.stringify(readChipForm(form)) !== saved) e.preventDefault(); });
 
 form.onsubmit = async e => {
   e.preventDefault();
   const tech = chip.technology;
   try {
-    await api(API, formBody());
+    await api(API, readChipForm(form));
     chip = await api(API);
     fillInfo();
     fillWafers();
@@ -387,7 +320,7 @@ document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
 
 (async () => {
   [cfg, chip] = await Promise.all([api('/api/config'), api(API)]);
-  $('#techs').replaceChildren(...cfg.techs.map(t => new Option(t)));
+  setupChipForm(form, cfg);
   fillInfo();
   fillWafers();
   showTree();

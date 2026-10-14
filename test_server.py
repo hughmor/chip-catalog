@@ -3,6 +3,7 @@ import json
 import tempfile
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
@@ -81,6 +82,23 @@ def main():
         code, chip = call(base, c, {"wafers": [{"id": w1, "name": "plain", "map": "small"}]})
         assert chip["wafers"] == [{"id": w1, "name": "plain", "map": "small", "dies": {"3": {"status": "tested", "notes": "ring OK"}}}], chip
         assert json.loads((server.CATALOG / "chips" / "demo chip.json").read_text())["authors"] == ["Ann", "Bo"]
+
+        # upload a layout
+        def upload(name, data):
+            req = urllib.request.Request(f"{base}/api/chips?file={urllib.parse.quote(name)}", data=data, method="POST")
+            try:
+                with urllib.request.urlopen(req) as r:
+                    return r.status, json.loads(r.read())
+            except urllib.error.HTTPError as e:
+                return e.code, json.loads(e.read())
+        gds = (server.CATALOG / "gds" / "demo chip.gds").read_bytes()
+        code, new = upload("../new_chip.GDS", gds)
+        assert code == 201 and new["id"] == "new_chip" and (server.CATALOG / "gds" / "new_chip.GDS").exists(), new
+        assert upload("Demo Chip.oas", gds)[0] == 400  # same id, other case
+        assert upload("junk.gds", b"not a layout")[0] == 400
+        assert upload("notes.txt", gds)[0] == 400
+        assert sorted(p.name for p in (server.CATALOG / "gds").iterdir()) == ["demo chip.gds", "new_chip.GDS"]
+        assert len(call(base, "/api/chips")[1]) == 2
 
         # a technology with a .lyp file selects it, case-insensitive
         (server.CATALOG / "tech" / "MyTech.lyp").write_text("<layer-properties/>")

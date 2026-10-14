@@ -19,19 +19,7 @@
   <section id="tab-info">
     <dl id="infoview"></dl>
     <form id="info" class="hidden">
-      <label class="f">Internal name <input name="internal_name"></label>
-      <label class="f">Official (foundry / MPW) designation <input name="designation"></label>
-      <label class="f">Foundry / technology <input name="technology" list="techs"><span id="lyp"></span></label>
-      <datalist id="techs"></datalist>
-      <label class="f">Run (month / year) <input name="run" type="month" placeholder="YYYY-MM" pattern="\d{4}-\d{2}"></label>
-      <label class="f">GitHub repository <input name="github" type="url" placeholder="https://github.com/..."></label>
-      <div class="f">Authors</div>
-      <div id="authors-edit"></div>
-      <div class="row"><button type="button" id="addauthor" title="Add an author">+</button></div>
-      <label class="f">Notes <textarea name="notes"></textarea></label>
-      <div class="f">Wafers <small>(none for a one-off die)</small></div>
-      <div id="wafers-edit"></div>
-      <div class="row"><button type="button" id="addwafer">+ Add wafer</button></div>
+      <div class="fields"></div>
       <p><button type="submit">Save</button> <button type="button" id="cancel">Cancel</button><span class="msg" id="savemsg"></span></p>
     </form>
   </section>
@@ -59,6 +47,7 @@
   <canvas id="canvas"></canvas>
   <div id="toolbar"><button id="fit">Fit</button><button id="clear">Clear highlight</button><span id="hlinfo" class="hidden"></span><span id="coords"></span></div>
 </div>
+<script src="shared.js"></script>
 <script src="chip.js"></script>
 </body>
 </html>

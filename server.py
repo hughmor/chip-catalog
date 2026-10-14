@@ -34,6 +34,7 @@ DEFAULT_CONFIG = {
                  "damaged": "#d9534f", "offsite": "#c58af9"},
 }
 MAX_BODY = 1 << 20
+MAX_UPLOAD = 2 << 30
 MAX_BOXES = 2000
 CATALOG = Path("catalog")
 # ponytail: one lock for all KLayout calls and record writes. Use per-chip locks if many users edit at once.
@@ -128,6 +129,38 @@ def update_die(cid, wid, label, body):
             die["notes"] = str(body["notes"])
         save_chip(chip)
         return die
+
+
+def add_layout(name, stream, size):
+    """Save an uploaded layout file into gds/. The file name gives the chip id."""
+    name = Path(name).name
+    stem, ext = os.path.splitext(name)
+    if ext.lower() not in LAYOUT_EXTS:
+        raise ValueError(f"the file must be one of {sorted(LAYOUT_EXTS)}")
+    if not re.fullmatch(r"[\w\-. ()]+", stem) or stem.startswith("."):
+        raise ValueError("use only letters, digits, spaces and - _ . ( ) in the file name")
+    if size > MAX_UPLOAD:
+        raise ValueError("the file is too large")
+    tmp = CATALOG / "gds" / f".upload-{uuid.uuid4().hex}.tmp"
+    try:
+        with open(tmp, "wb") as f:
+            while size > 0:
+                chunk = stream.read(min(size, 1 << 20))
+                if not chunk:
+                    raise ValueError("the upload stopped before the end of the file")
+                f.write(chunk)
+                size -= len(chunk)
+        with LOCK:
+            try:
+                db.Layout().read(str(tmp))
+            except RuntimeError as e:
+                raise ValueError(f"KLayout cannot read this file: {e}")
+            if stem.lower() in (k.lower() for k in layouts()):
+                raise ValueError(f"a chip with the id {stem!r} already exists")
+            os.replace(tmp, CATALOG / "gds" / name)
+    finally:
+        tmp.unlink(missing_ok=True)
+    return load_chip(stem)
 
 
 # ---------- layouts (call with LOCK held) ----------
@@ -227,8 +260,10 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             fn(parts[1:], q)
         except KeyError as e:
+            self.close_connection = True  # the request body can be unread
             self.send({"error": f"not found: {e}"}, code=404)
         except (ValueError, TypeError) as e:
+            self.close_connection = True
             self.send({"error": str(e)}, code=400)
 
     def do_GET(self):
@@ -236,6 +271,9 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_PUT(self):
         self.dispatch(self.put)
+
+    def do_POST(self):
+        self.dispatch(self.post)
 
     def get(self, parts, q):
         match parts:
@@ -275,6 +313,13 @@ class Handler(SimpleHTTPRequestHandler):
                     lv, ly, top = view(cid)
                     boxes, truncated = instance_boxes(ly, top, q["cell"])
                     self.send({"boxes": boxes, "truncated": truncated})
+            case _:
+                raise KeyError(self.path)
+
+    def post(self, parts, q):
+        match parts:
+            case ["chips"]:
+                self.send(add_layout(q["file"], self.rfile, int(self.headers.get("Content-Length", 0))), code=201)
             case _:
                 raise KeyError(self.path)
 

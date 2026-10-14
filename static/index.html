@@ -13,10 +13,20 @@
   <option value="new">Run date (newest first)</option>
   <option value="old">Run date (oldest first)</option>
 </select>
+<button id="add">+ Add chip</button>
 <button onclick="toggleTheme()" title="Light or dark mode">◐</button></header>
 <main id="grid"></main>
+<dialog id="adddlg">
+  <form id="addform">
+    <h2>Add a chip</h2>
+    <label class="f">Layout file (GDS or OASIS) <input name="file" type="file" accept=".gds,.gds2,.gdsii,.oas" required></label>
+    <p class="msg">The file name becomes the chip ID. You cannot change it later.</p>
+    <div class="fields"></div>
+    <p><button type="submit">Add chip</button> <button type="button" id="addcancel">Cancel</button><span class="msg" id="addmsg"></span></p>
+  </form>
+</dialog>
+<script src="shared.js"></script>
 <script>
-const enc = encodeURIComponent;
 (async () => {
   const [cfg, chips] = await Promise.all(['/api/config', '/api/chips'].map(u => fetch(u).then(r => r.json())));
   document.title = document.getElementById('title').textContent = cfg.title;
@@ -44,6 +54,39 @@ const enc = encodeURIComponent;
     grid.append(...[...grid.children].sort(sorts[sort.value]));
   };
   sort.onchange();
+  const dlg = document.getElementById('adddlg'), form = document.getElementById('addform'), msg = document.getElementById('addmsg');
+  setupChipForm(form, cfg);
+  document.getElementById('add').onclick = () => {
+    form.reset();
+    fillChipForm(form, cfg, { internal_name: '', designation: '', technology: '', run: '', github: '', notes: '', authors: [], wafers: [] });
+    msg.textContent = '';
+    dlg.showModal();
+  };
+  document.getElementById('addcancel').onclick = () => dlg.close();
+  form.elements.file.onchange = () => {
+    const file = form.elements.file.files[0];
+    if (file && !form.elements.internal_name.value) form.elements.internal_name.value = file.name.replace(/\.[^.]+$/, '');
+  };
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const file = form.elements.file.files[0], submit = form.querySelector('[type=submit]');
+    submit.disabled = true;
+    msg.textContent = 'Uploading...';
+    let added;
+    try {
+      added = await api(`/api/chips?file=${enc(file.name)}`, file, 'POST');
+    } catch (err) {
+      msg.textContent = `Not added: ${err.message}`;
+      submit.disabled = false;
+      return;
+    }
+    try {
+      await api(`/api/chips/${enc(added.id)}`, readChipForm(form));
+    } catch (err) {
+      alert(`The chip was added, but its record was not saved: ${err.message}. Edit the record on the chip page.`);
+    }
+    location = `chip.html?id=${enc(added.id)}`;
+  };
   document.getElementById('q').oninput = e => {
     const q = e.target.value.toLowerCase();
     for (const a of grid.children) a.classList.toggle('hidden', !a.dataset.text.includes(q));
