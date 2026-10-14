@@ -58,7 +58,7 @@ def wafer_maps():
 
 
 def map_labels(m):
-    return [t for row in m["rows"] for t in row.split() if t != "."]
+    return [t for row in m["rows"] for t in row.split() if t not in (".", "_")]  # "." no site, "_" empty site
 
 
 def techs():

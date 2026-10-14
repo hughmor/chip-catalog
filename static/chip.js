@@ -297,7 +297,7 @@ function drawWafer() {
   const m = cfg.wafermaps[w.map];
   if (!m) return $('#wafermap').replaceChildren(el('p', 'msg', `Wafer map "${w.map}" is missing from wafermaps/.`));
   const rows = m.rows.map(r => r.trim().split(/\s+/));
-  const labels = rows.flat().filter(t => t !== '.');
+  const labels = rows.flat().filter(t => t !== '.' && t !== '_'); // '.' no site, '_' empty site
   const counts = {};
   for (const l of labels) counts[dieOf(w, l).status] = (counts[dieOf(w, l).status] || 0) + 1;
 
@@ -314,19 +314,30 @@ function drawWafer() {
 
   // map: die (row r, column c) sits at ((c - ncols/2) * dw, (r - nrows/2) * dh), wafer centre at (0, 0)
   const [dw, dh] = m.die_size || [1, 1], ncols = Math.max(...rows.map(r => r.length)), nrows = rows.length;
-  const R = (m.wafer_diameter || 0) / 2, gx = ncols * dw / 2, gy = nrows * dh / 2;
+  const font = Math.min(dw, dh) * 0.4, axis = font * 1.5; // axis: space for the axis labels on each side
+  const R = (m.wafer_diameter || 0) / 2;
+  const gx = ncols * dw / 2 + (m.row_labels ? 2 * axis : 0), gy = nrows * dh / 2 + (m.col_labels ? 2 * axis : 0);
   const hw = Math.max(R, gx) * 1.02, hh = Math.max(R, gy) * 1.02;
-  const svg = document.createElementNS(SVG, 'svg');
-  svg.setAttribute('viewBox', `${-hw} ${-hh} ${2 * hw} ${2 * hh}`);
-  const font = Math.min(dw, dh) * 0.4;
-  svg.setAttribute('font-size', font);
-  if (R) {
-    const c = document.createElementNS(SVG, 'circle');
-    c.setAttribute('r', R);
-    svg.append(c);
+  const svgEl = (tag, attrs, text) => {
+    const e = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const svg = svgEl('svg', { viewBox: `${-hw} ${-hh} ${2 * hw} ${2 * hh}`, 'font-size': font });
+  if (R) svg.append(svgEl('circle', { r: R }));
+  // axis labels on all four sides, as on a printed wafer map
+  for (const [i, t] of (m.col_labels || []).entries()) {
+    const x = (i - ncols / 2 + 0.5) * dw;
+    svg.append(svgEl('text', { x, y: -nrows / 2 * dh - axis, class: 'axis' }, t), svgEl('text', { x, y: nrows / 2 * dh + axis, class: 'axis' }, t));
+  }
+  for (const [i, t] of (m.row_labels || []).entries()) {
+    const y = (i - nrows / 2 + 0.5) * dh;
+    svg.append(svgEl('text', { x: -ncols / 2 * dw - axis, y, class: 'axis' }, t), svgEl('text', { x: ncols / 2 * dw + axis, y, class: 'axis' }, t));
   }
   rows.forEach((row, r) => row.forEach((label, c) => {
     if (label === '.') return;
+    if (label === '_') return svg.append(svgEl('rect', { x: (c - ncols / 2) * dw, y: (r - nrows / 2) * dh, width: dw, height: dh, class: 'empty' }));
     const d = dieOf(w, label), g = document.createElementNS(SVG, 'g');
     const rect = document.createElementNS(SVG, 'rect');
     Object.entries({ x: (c - ncols / 2) * dw, y: (r - nrows / 2) * dh, width: dw, height: dh, fill: cfg.statuses[d.status] || '#666' })

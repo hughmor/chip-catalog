@@ -125,17 +125,20 @@ A wafer map is a JSON file in `wafermaps/`. The file name without `.json` is the
   "name": "200 mm MPW",
   "die_size": [25, 30],
   "wafer_diameter": 200,
+  "col_labels": ["-1", "0", "1"],
+  "row_labels": ["2", "1", "-1"],
   "rows": [
-    ".  .  1  2  3  .  .",
-    ".  4  5  6  7  8  .",
-    "9  10 11 12 13 14 15"
+    "_  1  _",
+    "2  3  4",
+    ".  5  ."
   ]
 }
 ```
 
-- `rows` is the die grid, from the top of the wafer to the bottom. Each string is one row of labels, separated by spaces. A `.` is a position with no die. Labels can be any text without spaces, for example `A3` or `12`. Each label must be unique in the map.
+- `rows` is the die grid, from the top of the wafer to the bottom. Each string is one row of labels, separated by spaces. A `.` is a position with no die. A `_` is an empty site: the map draws its outline, but it is not a die. Labels can be any text without spaces, for example `A3` or `12`. Each label must be unique in the map.
 - `die_size` is the width and height of one die. It sets the shape of each die in the drawing. The default is `[1, 1]`.
 - `wafer_diameter` is optional. It is in the same unit as `die_size`. The viewer draws a wafer outline with this diameter, centred on the die grid.
+- `col_labels` and `row_labels` are optional. They give one axis label for each column and each row. The map shows them on all four sides.
 - `name` is the name in the menus.
 
 Die records use the labels as keys. If you change the labels in a map, records for old labels stay in the chip file but do not show.

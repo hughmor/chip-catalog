@@ -62,6 +62,8 @@ textarea { min-height: 120px; resize: vertical; }
 #wafermap svg { width: 100%; height: auto; }
 body.editing #wafermap rect { cursor: pointer; }
 #wafermap rect { stroke: var(--bg); stroke-width: 0.4; }
+#wafermap rect.empty { fill: none; stroke: var(--muted); stroke-width: 0.3; }
+#wafermap text.axis { fill: var(--muted); font-size: 0.8em; }
 #wafermap rect.noted { stroke: var(--fg); stroke-width: 0.8; }
 #wafermap text { pointer-events: none; fill: #000; text-anchor: middle; dominant-baseline: central; }
 #dietable { width: 100%; border-collapse: collapse; }

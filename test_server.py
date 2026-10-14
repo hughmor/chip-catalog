@@ -34,7 +34,7 @@ def make_catalog(root):
     top.insert(db.CellInstArray(a.cell_index(), db.Trans(db.Point(0, 0))))
     top.insert(db.CellInstArray(a.cell_index(), db.Trans(db.Point(0, 20000))))
     ly.write(str(root / "gds" / "demo chip.gds"))
-    (root / "wafermaps" / "small.json").write_text(json.dumps({"name": "Small", "rows": [". 1 .", "2 3 4"]}))
+    (root / "wafermaps" / "small.json").write_text(json.dumps({"name": "Small", "rows": [". 1 _", "2 3 4"]}))
 
 
 def main():
@@ -90,6 +90,7 @@ def main():
         assert call(base, f"{c}/wafers/{w1}/dies/3", {"status": "tested", "notes": "ring OK"})[1] == {"status": "tested", "notes": "ring OK"}
         assert call(base, f"{c}/wafers/{w1}/dies/3", {"status": "broken"})[0] == 400
         assert call(base, f"{c}/wafers/{w1}/dies/99", {"status": "tested"})[0] == 404
+        assert call(base, f"{c}/wafers/{w1}/dies/_", {"status": "tested"})[0] == 404  # empty site, not a die
         assert call(base, f"{c}/wafers/zzz/dies/3", {"status": "tested"})[0] == 404
 
         # removing the first wafer must keep the second wafer's die records
