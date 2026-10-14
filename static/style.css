@@ -75,3 +75,7 @@ body.editing #wafermap rect { cursor: pointer; }
 #infoview .notes { white-space: pre-wrap; }
 #legend span.legendkey { padding: 4px 6px; }
 #wafermap circle { fill: var(--surface); stroke: var(--border); stroke-width: 0.4; }
+#layerlist .layer { display: flex; gap: 6px; align-items: center; padding: 1px 0; cursor: pointer; }
+#layerlist .ingroup { margin-left: 14px; }
+#layerlist .layergroup { margin-top: 8px; color: var(--muted); font-size: 12px; cursor: pointer; }
+#layerlist .layergroup:hover { color: var(--fg); }

@@ -185,9 +185,40 @@ def view(cid):
     return _view(str(path), path.stat().st_mtime, lyp_for(chip["technology"]))
 
 
-def render(lv, box, w, h, bg):
+def layer_nodes(lv):
+    """Yield (id, node, group name) for each layer in the layer list. Groups are not yielded."""
+    it, group = lv.begin_layers(), None
+    n = 0
+    while not it.at_end():
+        node = it.current()
+        if node.has_children():
+            group = node.name
+        else:
+            yield n, node, None if it.at_top() else group
+        n += 1
+        it.next()
+
+
+def layer_list(lv):
+    """Layers that have shapes in the layout, with the visibility from the .lyp file."""
+    return [{"id": n, "name": node.name or node.source.split("@")[0], "group": group,
+             "colour": f"#{node.eff_fill_color(True) & 0xffffff:06x}", "visible": node.visible}
+            for n, node, group in layer_nodes(lv) if node.layer_index() >= 0]
+
+
+def render(lv, box, w, h, bg, hidden=None):
+    """Render a box. hidden is a set of layer ids to hide, or None for the .lyp visibility."""
     lv.set_config("background-color", BACKGROUNDS[bg])
-    return lv.get_pixels_with_options(w, h, 0, 0, 0, box).to_png_data()
+    if hidden is None:
+        return lv.get_pixels_with_options(w, h, 0, 0, 0, box).to_png_data()
+    defaults = {n: node.visible for n, node, _ in layer_nodes(lv)}
+    try:
+        for n, node, _ in layer_nodes(lv):
+            node.visible = n not in hidden
+        return lv.get_pixels_with_options(w, h, 0, 0, 0, box).to_png_data()
+    finally:  # other users share this view
+        for n, node, _ in layer_nodes(lv):
+            node.visible = defaults[n]
 
 
 def background(q):
@@ -305,7 +336,11 @@ class Handler(SimpleHTTPRequestHandler):
                     raise ValueError("empty box")
                 with LOCK:
                     lv, ly, top = view(cid)
-                    self.send(render(lv, db.DBox(l, b, r, t), w, h, background(q)), "image/png", cache=True)
+                    hidden = {int(n) for n in q["hide"].split(",") if n} if "hide" in q else None
+                    self.send(render(lv, db.DBox(l, b, r, t), w, h, background(q), hidden), "image/png", cache=True)
+            case ["chips", cid, "layers"]:
+                with LOCK:
+                    self.send(layer_list(view(cid)[0]))
             case ["chips", cid, "cells"]:
                 with LOCK:
                     lv, ly, top = view(cid)

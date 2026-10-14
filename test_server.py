@@ -62,6 +62,13 @@ def main():
         assert call(base, f"{c}/thumb.png")[1][:4] == b"\x89PNG"
         assert call(base, f"{c}/render.png?box=1,1,0,0&w=5&h=5")[0] == 400
         assert call(base, f"{c}/render.png?box=0,0,10,10&w=5&h=5&bg=pink")[0] == 400
+        code, layers = call(base, f"{c}/layers")
+        assert [(l["name"], l["visible"]) for l in layers] == [("1/0", True)], layers
+        lid = layers[0]["id"]
+        blank = call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50&hide={lid}")[1]
+        assert blank != png and call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50&hide=")[1] == png
+        assert call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50")[1] == png  # hide does not stick
+        assert call(base, f"{c}/render.png?box=0,0,10,10&w=5&h=5&hide=x")[0] == 400
         light = call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50&bg=light")[1]
         assert light != png and call(base, f"{c}/thumb.png?bg=light")[1][:4] == b"\x89PNG"
 

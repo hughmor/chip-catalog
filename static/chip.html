@@ -13,6 +13,7 @@
   <nav class="tabs">
     <button data-tab="info" class="on">Info</button>
     <button data-tab="cells">Cells</button>
+    <button data-tab="layers">Layers</button>
     <button data-tab="wafers">Wafers</button>
   </nav>
 
@@ -27,6 +28,11 @@
   <section id="tab-cells" class="hidden">
     <div class="row"><input id="cellq" type="search" placeholder="Search all cells"></div>
     <div id="celltree"></div>
+  </section>
+
+  <section id="tab-layers" class="hidden">
+    <div class="row"><button id="showall">Show all</button><button id="hideall">Hide all</button></div>
+    <div id="layerlist"></div>
   </section>
 
   <section id="tab-wafers" class="hidden">

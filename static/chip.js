@@ -39,7 +39,7 @@ function update() {
   timer = setTimeout(() => {
     const box = viewBox(), id = ++seq, im = new Image();
     im.onload = () => { if (id === seq) { img = im; imgBox = box; draw(); } };
-    im.src = `${API}/render.png?box=${box.map(v => v.toFixed(4)).join(',')}&w=${Math.round(W * dpr)}&h=${Math.round(H * dpr)}&v=${enc(chip.technology)}&bg=${theme()}`;
+    im.src = `${API}/render.png?box=${box.map(v => v.toFixed(4)).join(',')}&w=${Math.round(W * dpr)}&h=${Math.round(H * dpr)}&v=${enc(chip.technology)}&bg=${theme()}${hidden ? `&hide=${[...hidden].join(',')}` : ''}`;
   }, 120);
 }
 
@@ -138,6 +138,47 @@ $('#cellq').oninput = e => {
   }, 200);
 };
 
+// ---------- layers ----------
+let layers = [], hidden = null; // null until the layer list loads: the server then uses the .lyp visibility
+
+async function loadLayers() {
+  layers = await api(`${API}/layers`);
+  hidden = new Set(layers.filter(l => !l.visible).map(l => l.id));
+  drawLayers();
+}
+
+function setHidden(ids, hide) {
+  for (const id of ids) hide ? hidden.add(id) : hidden.delete(id);
+  drawLayers();
+  update();
+}
+
+function drawLayers() {
+  const rows = [];
+  let prev = null;
+  for (const l of layers) {
+    const group = l.group;
+    if (group && group !== prev) {
+      const ids = layers.filter(x => x.group === group).map(x => x.id), head = el('div', 'layergroup', group);
+      head.title = 'Show or hide this group';
+      head.onclick = () => setHidden(ids, ids.some(id => !hidden.has(id)));
+      rows.push(head);
+    }
+    prev = group;
+    const row = el('label', l.group ? 'layer ingroup' : 'layer'), cb = el('input'), sw = el('span', 'swatch');
+    cb.type = 'checkbox';
+    cb.checked = !hidden.has(l.id);
+    cb.onchange = () => setHidden([l.id], !cb.checked);
+    sw.style.background = l.colour;
+    row.append(cb, sw, l.name);
+    rows.push(row);
+  }
+  $('#layerlist').replaceChildren(...(rows.length ? rows : [el('p', 'msg', 'This layout has no layers.')]));
+}
+
+$('#showall').onclick = () => setHidden(layers.map(l => l.id), false);
+$('#hideall').onclick = () => setHidden(layers.map(l => l.id), true);
+
 // ---------- info ----------
 const form = $('#info');
 
@@ -198,7 +239,7 @@ form.onsubmit = async e => {
     chip = await api(API);
     fillInfo();
     fillWafers();
-    if (chip.technology !== tech) update(); // new layer colours
+    if (chip.technology !== tech) { await loadLayers(); update(); } // new layer colours
     $('#savemsg').textContent = 'Saved';
   } catch (err) {
     $('#savemsg').textContent = `Not saved: ${err.message}`;
@@ -316,7 +357,7 @@ document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
 // ---------- tabs and start ----------
 document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
   document.querySelectorAll('[data-tab]').forEach(x => x.classList.toggle('on', x === b));
-  for (const t of ['info', 'cells', 'wafers']) $(`#tab-${t}`).classList.toggle('hidden', t !== b.dataset.tab);
+  for (const t of ['info', 'cells', 'layers', 'wafers']) $(`#tab-${t}`).classList.toggle('hidden', t !== b.dataset.tab);
 });
 
 (async () => {
@@ -326,4 +367,5 @@ document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
   fillWafers();
   showTree();
   fitTo(chip.bbox);
+  loadLayers().then(update);
 })();
