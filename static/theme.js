@@ -3,4 +3,6 @@ document.documentElement.dataset.theme = localStorage.theme || (matchMedia('(pre
 function toggleTheme() {
   const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = localStorage.theme = t;
+  dispatchEvent(new Event('themechange'));
 }
+const theme = () => document.documentElement.dataset.theme;

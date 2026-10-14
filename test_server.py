@@ -61,6 +61,9 @@ def main():
         assert code == 200 and png[:4] == b"\x89PNG"
         assert call(base, f"{c}/thumb.png")[1][:4] == b"\x89PNG"
         assert call(base, f"{c}/render.png?box=1,1,0,0&w=5&h=5")[0] == 400
+        assert call(base, f"{c}/render.png?box=0,0,10,10&w=5&h=5&bg=pink")[0] == 400
+        light = call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50&bg=light")[1]
+        assert light != png and call(base, f"{c}/thumb.png?bg=light")[1][:4] == b"\x89PNG"
 
         # metadata validation
         assert call(base, c, {"github": "javascript:alert(1)"})[0] == 400

@@ -16,15 +16,15 @@ const viewBox = () => [...toWorld(0, H), ...toWorld(W, 0)];
 
 function draw() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = theme() === 'light' ? '#fff' : '#000';
   ctx.fillRect(0, 0, W, H);
   if (img) {
     const [x1, y1] = toScreen(imgBox[0], imgBox[3]), [x2, y2] = toScreen(imgBox[2], imgBox[1]);
     ctx.drawImage(img, x1, y1, x2 - x1, y2 - y1);
   }
   ctx.lineWidth = 2;
-  ctx.strokeStyle = '#0ff';
-  ctx.fillStyle = 'rgba(0,255,255,0.15)';
+  ctx.strokeStyle = theme() === 'light' ? '#e0007a' : '#0ff';
+  ctx.fillStyle = theme() === 'light' ? 'rgba(224,0,122,0.12)' : 'rgba(0,255,255,0.15)';
   for (const [l, b, r, t] of highlights) {
     const [x1, y1] = toScreen(l, t), [x2, y2] = toScreen(r, b);
     const w = Math.max(x2 - x1, 3), h = Math.max(y2 - y1, 3);
@@ -39,7 +39,7 @@ function update() {
   timer = setTimeout(() => {
     const box = viewBox(), id = ++seq, im = new Image();
     im.onload = () => { if (id === seq) { img = im; imgBox = box; draw(); } };
-    im.src = `${API}/render.png?box=${box.map(v => v.toFixed(4)).join(',')}&w=${Math.round(W * dpr)}&h=${Math.round(H * dpr)}&v=${enc(chip.technology)}`;
+    im.src = `${API}/render.png?box=${box.map(v => v.toFixed(4)).join(',')}&w=${Math.round(W * dpr)}&h=${Math.round(H * dpr)}&v=${enc(chip.technology)}&bg=${theme()}`;
   }, 120);
 }
 
@@ -78,6 +78,7 @@ cv.addEventListener('pointermove', e => {
   drag = [e.clientX, e.clientY];
   update();
 });
+addEventListener('themechange', () => { img = null; update(); });
 $('#fit').onclick = () => fitTo(chip.bbox);
 $('#clear').onclick = () => highlight(null);
 

@@ -38,7 +38,8 @@
     a.chip = c;
     a.dataset.text = [c.id, c.internal_name, c.designation, c.technology, c.run, c.notes, ...c.authors].join(' ').toLowerCase();
     a.innerHTML = '<img loading="lazy" alt=""><div class="meta"><div class="name"></div><div class="sub"></div></div>';
-    a.querySelector('img').src = `/api/chips/${enc(c.id)}/thumb.png?v=${c.mtime}-${enc(c.technology)}`;
+    a.thumb = `/api/chips/${enc(c.id)}/thumb.png?v=${c.mtime}-${enc(c.technology)}`;
+    a.querySelector('img').src = `${a.thumb}&bg=${theme()}`;
     a.querySelector('.name').textContent = c.internal_name;
     a.querySelector('.sub').textContent = [c.designation, c.technology, c.run].filter(Boolean).join(' · ') || c.file;
     grid.append(a);
@@ -87,6 +88,9 @@
     }
     location = `chip.html?id=${enc(added.id)}`;
   };
+  addEventListener('themechange', () => {
+    for (const a of grid.children) a.querySelector('img').src = `${a.thumb}&bg=${theme()}`;
+  });
   document.getElementById('q').oninput = e => {
     const q = e.target.value.toLowerCase();
     for (const a of grid.children) a.classList.toggle('hidden', !a.dataset.text.includes(q));

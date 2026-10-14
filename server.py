@@ -36,6 +36,7 @@ DEFAULT_CONFIG = {
 MAX_BODY = 1 << 20
 MAX_UPLOAD = 2 << 30
 MAX_BOXES = 2000
+BACKGROUNDS = {"dark": "#000000", "light": "#ffffff"}  # the page theme selects one
 CATALOG = Path("catalog")
 # ponytail: one lock for all KLayout calls and record writes. Use per-chip locks if many users edit at once.
 LOCK = threading.RLock()
@@ -169,7 +170,6 @@ def add_layout(name, stream, size):
 def _view(path, mtime, lyp):
     lv = lay.LayoutView()
     lv.set_config("grid-visible", "false")
-    lv.set_config("background-color", "#000000")
     lv.load_layout(path, True)
     ly = lv.active_cellview().layout()
     top = max(ly.top_cells(), key=lambda c: c.bbox().area())
@@ -185,24 +185,32 @@ def view(cid):
     return _view(str(path), path.stat().st_mtime, lyp_for(chip["technology"]))
 
 
-def render(lv, box, w, h):
+def render(lv, box, w, h, bg):
+    lv.set_config("background-color", BACKGROUNDS[bg])
     return lv.get_pixels_with_options(w, h, 0, 0, 0, box).to_png_data()
+
+
+def background(q):
+    bg = q.get("bg", "dark")
+    if bg not in BACKGROUNDS:
+        raise ValueError(f"bg must be one of {list(BACKGROUNDS)}")
+    return bg
 
 
 def box_list(b):
     return [b.left, b.bottom, b.right, b.top]
 
 
-def thumbnail(cid):
+def thumbnail(cid, bg):
     chip = load_chip(cid)
     tag = re.sub(r"\W", "_", chip["technology"]) or "default"
-    out = CATALOG / "chips" / ".thumbs" / f"{cid}.{tag}.png"
+    out = CATALOG / "chips" / ".thumbs" / f"{cid}.{tag}.{bg}.png"
     if not out.exists() or out.stat().st_mtime < chip["mtime"]:
         lv, ly, top = view(cid)
         b = top.dbbox()
         out.parent.mkdir(exist_ok=True)
         out.write_bytes(render(lv, b.enlarged(b.width() * 0.01, b.height() * 0.01), 640,
-                               max(64, min(640, round(640 * b.height() / max(b.width(), 1e-9))))))
+                               max(64, min(640, round(640 * b.height() / max(b.width(), 1e-9)))), bg))
     return out.read_bytes()
 
 
@@ -289,7 +297,7 @@ class Handler(SimpleHTTPRequestHandler):
                                "lyp": Path(lyp_for(chip["technology"]) or "").name or None})
             case ["chips", cid, "thumb.png"]:
                 with LOCK:
-                    self.send(thumbnail(cid), "image/png", cache=True)
+                    self.send(thumbnail(cid, background(q)), "image/png", cache=True)
             case ["chips", cid, "render.png"]:
                 l, b, r, t = map(float, q["box"].split(","))
                 w, h = (max(1, min(4096, int(q[k]))) for k in ("w", "h"))
@@ -297,7 +305,7 @@ class Handler(SimpleHTTPRequestHandler):
                     raise ValueError("empty box")
                 with LOCK:
                     lv, ly, top = view(cid)
-                    self.send(render(lv, db.DBox(l, b, r, t), w, h), "image/png", cache=True)
+                    self.send(render(lv, db.DBox(l, b, r, t), w, h, background(q)), "image/png", cache=True)
             case ["chips", cid, "cells"]:
                 with LOCK:
                     lv, ly, top = view(cid)
