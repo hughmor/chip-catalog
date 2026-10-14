@@ -325,7 +325,6 @@ function drawWafer() {
   if (R) {
     const c = document.createElementNS(SVG, 'circle');
     c.setAttribute('r', R);
-    c.setAttribute('fill', '#23262b');
     svg.append(c);
   }
   rows.forEach((row, r) => row.forEach((label, c) => {

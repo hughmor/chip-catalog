@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>Chip Catalog</title>
 <link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 </head>
 <body>
 <header><h1 id="title">Chip Catalog</h1><input id="q" type="search" placeholder="Filter chips">
@@ -11,7 +12,8 @@
   <option value="name">Name (A–Z)</option>
   <option value="new">Run date (newest first)</option>
   <option value="old">Run date (oldest first)</option>
-</select></header>
+</select>
+<button onclick="toggleTheme()" title="Light or dark mode">◐</button></header>
 <main id="grid"></main>
 <script>
 const enc = encodeURIComponent;

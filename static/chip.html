@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <title>Chip</title>
 <link rel="stylesheet" href="style.css">
+<script src="theme.js"></script>
 </head>
 <body class="viewer">
 <aside id="panel">
   <a href="/">&larr; Catalog</a>
-  <div class="titlebar"><h1 id="name"></h1><button id="edit" title="Make the chip record and die status editable">Edit</button></div>
+  <div class="titlebar"><h1 id="name"></h1><button onclick="toggleTheme()" title="Light or dark mode">◐</button><button id="edit" title="Make the chip record and die status editable">Edit</button></div>
   <nav class="tabs">
     <button data-tab="info" class="on">Info</button>
     <button data-tab="cells">Cells</button>
