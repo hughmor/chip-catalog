@@ -8,7 +8,7 @@ The app holds no lab data. All data lives in one catalog directory. Another lab 
 
 ![Chip page with the wafer map](docs/chip.png)
 
-The screenshots blur the chip layouts and show placeholder names.
+The screenshots show placeholder names and blur the chip layouts.
 
 ## Set up for your organisation
 
