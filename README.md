@@ -4,6 +4,12 @@ Chip Catalog is a web catalog of chip layouts. The main page shows a preview of 
 
 The app holds no lab data. All data lives in one catalog directory. Another lab can use the app with its own catalog directory.
 
+![Catalog page](docs/catalog.png)
+
+![Chip page with the wafer map](docs/chip.png)
+
+The screenshots blur the chip layouts and show placeholder names.
+
 ## Set up for your organisation
 
 This repository holds only the app. Git ignores the `catalog/` directory, so your layouts and chip records never go into this repository.
@@ -22,6 +28,62 @@ This repository holds only the app. Git ignores the `catalog/` directory, so you
 The server uses `./catalog` by default. To use a different directory, give `--catalog DIR` or set the `CHIP_CATALOG` environment variable.
 
 To share the catalog on your network, add `--host 0.0.0.0`. The server has no login. Anyone who can reach the port can edit records. Use it only on a trusted network.
+
+You need Python 3.10 or later. The KLayout package has wheels for Linux, macOS and Windows. It does not need a display.
+
+## Host on a server
+
+These steps set up the catalog as a service on a Linux server with systemd. Change the paths, the user name, and the port as necessary.
+
+1. Fork this repository into your organisation on GitHub.
+2. On the server, clone the fork: `git clone <URL of your fork> /opt/chip-catalog`
+3. Go to the directory: `cd /opt/chip-catalog`
+4. Make a Python environment: `python3 -m venv .venv`
+5. Install KLayout: `.venv/bin/pip install -r requirements.txt`
+6. Copy your catalog directory to `/opt/chip-catalog/catalog` (see the next section).
+7. Start the server one time to check it: `.venv/bin/python server.py --host 0.0.0.0 --port 8000`
+8. Open `http://<server name>:8000/` from a different computer, then stop the server with Ctrl+C.
+9. Write the service file below to `/etc/systemd/system/chip-catalog.service`.
+10. Load the service file: `sudo systemctl daemon-reload`
+11. Start the service now and at each boot: `sudo systemctl enable --now chip-catalog`
+
+```ini
+[Unit]
+Description=Chip Catalog
+After=network.target
+
+[Service]
+User=chipcatalog
+WorkingDirectory=/opt/chip-catalog
+ExecStart=/opt/chip-catalog/.venv/bin/python server.py --host 0.0.0.0 --port 8000
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+The user in `User=` must be able to write to the `catalog/` directory. To see the server log, run `journalctl -u chip-catalog -f`.
+
+The server has no login. Make sure that only your lab network can reach the port, for example with a firewall rule. To get HTTPS or a password, put a reverse proxy such as nginx in front of the server.
+
+The catalog directory holds all records. Back it up on a schedule.
+
+To install app updates on the server:
+
+1. Get the updates: `git pull`
+2. Restart the service: `sudo systemctl restart chip-catalog`
+
+### Copy a catalog to the server
+
+Use rsync over SSH. The trailing slashes are necessary. The command does not copy the cached thumbnails, because the server makes them again.
+
+```sh
+rsync -av --exclude .thumbs catalog/ user@server:/opt/chip-catalog/catalog/
+```
+
+If the server does not have rsync, use `scp -r catalog user@server:/opt/chip-catalog/`.
+
+After the copy, edit records only on the server. Two copies that both get edits do not merge.
 
 ### Keep your catalog in version control
 
