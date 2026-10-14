@@ -23,7 +23,9 @@
       <datalist id="techs"></datalist>
       <label class="f">Run (month / year) <input name="run" type="month" placeholder="YYYY-MM" pattern="\d{4}-\d{2}"></label>
       <label class="f">GitHub repository <a id="ghlink" target="_blank" rel="noopener"></a><input name="github" type="url" placeholder="https://github.com/..."></label>
-      <label class="f">Authors (comma separated) <input name="authors"></label>
+      <div class="f">Authors</div>
+      <div id="authors-edit"></div>
+      <div class="row"><button type="button" id="addauthor" title="Add an author">+</button></div>
       <label class="f">Notes <textarea name="notes"></textarea></label>
       <div class="f">Wafers <small>(none for a one-off die)</small></div>
       <div id="wafers-edit"></div>

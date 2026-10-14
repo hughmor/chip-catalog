@@ -30,7 +30,7 @@ body.viewer { display: flex; height: 100vh; overflow: hidden; }
 #coords { margin-left: auto; font-family: ui-monospace, monospace; }
 .tabs { display: flex; gap: 4px; margin-bottom: 10px; }
 .hidden { display: none !important; }
-label.f { display: block; margin-bottom: 8px; color: #9aa0a8; font-size: 12px; }
+.f { display: block; margin-bottom: 8px; color: #9aa0a8; font-size: 12px; }
 label.f input, label.f textarea { display: block; width: 100%; margin-top: 2px; color: #e4e6e9; }
 textarea { min-height: 120px; resize: vertical; }
 .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }

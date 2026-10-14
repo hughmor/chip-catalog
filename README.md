@@ -50,7 +50,7 @@ Run `.venv/bin/python test_server.py`. The test makes its own small layout and d
 
 - Scroll to zoom. Drag to pan. Click **Fit** to see the full chip.
 - In the **Cells** tab, expand the cell tree, or search all cells by name. Click a cell name to highlight each placement of that cell and zoom to it.
-- In the **Info** tab, edit the chip record and click **Save**.
+- In the **Info** tab, edit the chip record and click **Save**. Click **+** to add an author line.
 - In the **Wafers** tab, select a wafer. Select a status in the legend, then click dies to set that status. With **cycle**, each click moves a die to the next status. Hover over a die to see its notes. Click **Table** to edit the status and notes of each die in a list. Dies with notes have a white border.
 
 ## Catalog directory

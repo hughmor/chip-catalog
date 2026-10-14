@@ -172,6 +172,23 @@ function waferRow(w) {
   return row;
 }
 
+function authorRow(name = '') {
+  const row = el('div', 'row'), input = el('input'), rm = el('button', '', '×');
+  input.value = name;
+  input.placeholder = 'Author name';
+  rm.type = 'button';
+  rm.title = 'Remove this author';
+  rm.onclick = () => row.remove();
+  row.append(input, rm);
+  return row;
+}
+
+$('#addauthor').onclick = () => {
+  const row = authorRow();
+  $('#authors-edit').append(row);
+  row.firstChild.focus();
+};
+
 $('#addwafer').onclick = () => {
   if (!Object.keys(cfg.wafermaps).length) return alert('The catalog has no wafer maps. Add a file to wafermaps/ first.');
   $('#wafers-edit').append(waferRow({ name: `Wafer ${$('#wafers-edit').children.length + 1}`, map: Object.keys(cfg.wafermaps)[0] }));
@@ -180,7 +197,7 @@ $('#addwafer').onclick = () => {
 function fillInfo() {
   document.title = $('#name').textContent = chip.internal_name;
   for (const k of ['internal_name', 'designation', 'technology', 'run', 'github', 'notes']) form.elements[k].value = chip[k];
-  form.elements.authors.value = chip.authors.join(', ');
+  $('#authors-edit').replaceChildren(...chip.authors.map(a => authorRow(a)));
   $('#ghlink').textContent = chip.github ? 'open' : '';
   $('#ghlink').href = chip.github || '#';
   $('#lyp').textContent = chip.lyp ? ` layers: ${chip.lyp}` : ' layers: default colours';
@@ -195,7 +212,7 @@ form.onsubmit = async e => {
   const body = {
     internal_name: f.internal_name.value.trim(), designation: f.designation.value.trim(),
     technology: f.technology.value.trim(), run: f.run.value.trim(), github: f.github.value.trim(), notes: f.notes.value,
-    authors: f.authors.value.split(',').map(s => s.trim()).filter(Boolean),
+    authors: [...document.querySelectorAll('#authors-edit input')].map(i => i.value.trim()).filter(Boolean),
     wafers: [...$('#wafers-edit').children].map(r => ({ id: r.dataset.id || undefined, name: r.children[0].value.trim(), map: r.children[1].value })),
   };
   try {
