@@ -51,7 +51,7 @@ Run `.venv/bin/python test_server.py`. The test makes its own small layout and d
 - Scroll to zoom. Drag to pan. Click **Fit** to see the full chip.
 - In the **Layers** tab, clear a check box to hide a layer. Click a group name to show or hide all the layers in the group. The list shows only the layers that the layout uses.
 - Click **◐** to change between light and dark mode. The layout background also changes.
-- In the **Cells** tab, expand the cell tree, or search all cells by name. Click a cell name to highlight each placement of that cell and zoom to it.
+- In the **Cells** tab, expand the cell tree, or search all cells by name. Click a cell name to highlight each placement of that cell and zoom to it. Clear the check box next to a cell to hide it. The viewer then shows only its outline and name. Click **Show all cells** to show all cells again.
 - The chip page opens in read-only mode. Click **Edit** to change the chip record or the die status. Click **Done** to go back to read-only mode.
 - In edit mode, change the chip record in the **Info** tab and click **Save**. Click **+** to add an author line.
 - In the **Wafers** tab, select a wafer. In edit mode, select a status in the legend, then click dies to set that status. With **cycle**, each click moves a die to the next status. Hover over a die to see its notes. Click **Table** to edit the status and notes of each die in a list. Dies with notes have a white border.

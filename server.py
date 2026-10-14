@@ -206,17 +206,22 @@ def layer_list(lv):
             for n, node, group in layer_nodes(lv) if node.layer_index() >= 0]
 
 
-def render(lv, box, w, h, bg, hidden=None):
-    """Render a box. hidden is a set of layer ids to hide, or None for the .lyp visibility."""
+def render(lv, box, w, h, bg, hidden=None, hidden_cells=()):
+    """Render a box. hidden is a set of layer ids to hide, or None for the .lyp visibility.
+    hidden_cells is a list of cell names to hide. Unknown names are ignored."""
     lv.set_config("background-color", BACKGROUNDS[bg])
-    if hidden is None:
-        return lv.get_pixels_with_options(w, h, 0, 0, 0, box).to_png_data()
     defaults = {n: node.visible for n, node, _ in layer_nodes(lv)}
+    ly = lv.active_cellview().layout()
     try:
-        for n, node, _ in layer_nodes(lv):
-            node.visible = n not in hidden
+        if hidden is not None:
+            for n, node, _ in layer_nodes(lv):
+                node.visible = n not in hidden
+        for name in hidden_cells:
+            if cell := ly.cell(name):
+                lv.hide_cell(cell.cell_index(), 0)
         return lv.get_pixels_with_options(w, h, 0, 0, 0, box).to_png_data()
     finally:  # other users share this view
+        lv.show_all_cells()
         for n, node, _ in layer_nodes(lv):
             node.visible = defaults[n]
 
@@ -337,7 +342,10 @@ class Handler(SimpleHTTPRequestHandler):
                 with LOCK:
                     lv, ly, top = view(cid)
                     hidden = {int(n) for n in q["hide"].split(",") if n} if "hide" in q else None
-                    self.send(render(lv, db.DBox(l, b, r, t), w, h, background(q), hidden), "image/png", cache=True)
+                    cells = json.loads(q.get("hidecells", "[]"))
+                    if not (isinstance(cells, list) and all(isinstance(c, str) for c in cells)):
+                        raise ValueError("hidecells must be a JSON list of cell names")
+                    self.send(render(lv, db.DBox(l, b, r, t), w, h, background(q), hidden, cells), "image/png", cache=True)
             case ["chips", cid, "layers"]:
                 with LOCK:
                     self.send(layer_list(view(cid)[0]))

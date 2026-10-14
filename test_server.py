@@ -69,6 +69,10 @@ def main():
         assert blank != png and call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50&hide=")[1] == png
         assert call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50")[1] == png  # hide does not stick
         assert call(base, f"{c}/render.png?box=0,0,10,10&w=5&h=5&hide=x")[0] == 400
+        hide_b = urllib.parse.quote(json.dumps(["B", "no such cell"]))
+        assert call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50&hidecells={hide_b}")[1] != png
+        assert call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50")[1] == png  # hidecells does not stick
+        assert call(base, f"{c}/render.png?box=0,0,10,10&w=5&h=5&hidecells=B")[0] == 400
         light = call(base, f"{c}/render.png?box=0,0,10,10&w=50&h=50&bg=light")[1]
         assert light != png and call(base, f"{c}/thumb.png?bg=light")[1][:4] == b"\x89PNG"
 

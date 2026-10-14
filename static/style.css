@@ -79,3 +79,5 @@ body.editing #wafermap rect { cursor: pointer; }
 #layerlist .ingroup { margin-left: 14px; }
 #layerlist .layergroup { margin-top: 8px; color: var(--muted); font-size: 12px; cursor: pointer; }
 #layerlist .layergroup:hover { color: var(--fg); }
+#celltree input[type=checkbox] { margin: 0 3px 0 0; vertical-align: -2px; }
+#celltree .cellhidden .cellname { opacity: 0.45; text-decoration: line-through; }

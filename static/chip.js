@@ -39,7 +39,7 @@ function update() {
   timer = setTimeout(() => {
     const box = viewBox(), id = ++seq, im = new Image();
     im.onload = () => { if (id === seq) { img = im; imgBox = box; draw(); } };
-    im.src = `${API}/render.png?box=${box.map(v => v.toFixed(4)).join(',')}&w=${Math.round(W * dpr)}&h=${Math.round(H * dpr)}&v=${enc(chip.technology)}&bg=${theme()}${hidden ? `&hide=${[...hidden].join(',')}` : ''}`;
+    im.src = `${API}/render.png?box=${box.map(v => v.toFixed(4)).join(',')}&w=${Math.round(W * dpr)}&h=${Math.round(H * dpr)}&v=${enc(chip.technology)}&bg=${theme()}${hidden ? `&hide=${[...hidden].join(',')}` : ''}${hiddenCells.size ? `&hidecells=${enc(JSON.stringify([...hiddenCells]))}` : ''}`;
   }, 120);
 }
 
@@ -97,12 +97,32 @@ async function highlight(name) {
          Math.max(...boxes.map(b => b[2])), Math.max(...boxes.map(b => b[3]))], 1.3);
 }
 
+// A cell can show in many places in the tree. Each place has its own check box.
+const hiddenCells = new Set();
+
+function syncCellBoxes() {
+  document.querySelectorAll('#celltree input[type=checkbox]').forEach(cb => {
+    cb.checked = !hiddenCells.has(cb.dataset.name);
+    cb.parentElement.classList.toggle('cellhidden', !cb.checked);
+  });
+}
+
+$('#showcells').onclick = () => { hiddenCells.clear(); syncCellBoxes(); update(); };
+
 function cellNode(c) {
   const name = el('span', 'cellname', c.name);
   name.dataset.name = c.name;
   name.title = 'Highlight in the layout';
   name.onclick = e => { e.preventDefault(); highlight(c.name); };
-  const label = [name];
+  const cb = el('input');
+  Object.assign(cb, { type: 'checkbox', checked: !hiddenCells.has(c.name), title: 'Show or hide this cell' });
+  cb.dataset.name = c.name;
+  cb.onchange = () => {
+    cb.checked ? hiddenCells.delete(c.name) : hiddenCells.add(c.name);
+    syncCellBoxes();
+    update();
+  };
+  const label = [cb, name];
   if (c.count > 1) label.push(el('span', 'count', ` ×${c.count}`));
   if (c.leaf) {
     const d = el('div', 'leaf');
@@ -117,6 +137,7 @@ function cellNode(c) {
     d.loaded = true;
     const kids = await api(`${API}/cells?parent=${enc(c.name)}`);
     d.append(...kids.map(cellNode));
+    syncCellBoxes();
   });
   return d;
 }
@@ -125,6 +146,7 @@ function showTree() {
   const root = cellNode({ name: chip.top, count: 1, leaf: false });
   $('#celltree').replaceChildren(root);
   root.open = true;
+  syncCellBoxes();
 }
 
 let qtimer;
@@ -135,6 +157,7 @@ $('#cellq').oninput = e => {
     if (!q) return showTree();
     const names = await api(`${API}/cells?q=${enc(q)}`);
     $('#celltree').replaceChildren(...(names.length ? names.map(n => cellNode({ name: n, count: 1, leaf: true })) : [el('div', 'msg', 'No match')]));
+    syncCellBoxes();
   }, 200);
 };
 
