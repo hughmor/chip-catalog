@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chip</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="viewer">
+<aside id="panel">
+  <a href="/">&larr; Catalog</a>
+  <h1 id="name"></h1>
+  <nav class="tabs">
+    <button data-tab="info" class="on">Info</button>
+    <button data-tab="cells">Cells</button>
+    <button data-tab="wafers">Wafers</button>
+  </nav>
+
+  <section id="tab-info">
+    <form id="info">
+      <label class="f">Internal name <input name="internal_name"></label>
+      <label class="f">Official (foundry / MPW) designation <input name="designation"></label>
+      <label class="f">Foundry / technology <input name="technology" list="techs"><span id="lyp"></span></label>
+      <datalist id="techs"></datalist>
+      <label class="f">Run (month / year) <input name="run" type="month" placeholder="YYYY-MM" pattern="\d{4}-\d{2}"></label>
+      <label class="f">GitHub repository <a id="ghlink" target="_blank" rel="noopener"></a><input name="github" type="url" placeholder="https://github.com/..."></label>
+      <label class="f">Authors (comma separated) <input name="authors"></label>
+      <label class="f">Notes <textarea name="notes"></textarea></label>
+      <div class="f">Wafers <small>(none for a one-off die)</small></div>
+      <div id="wafers-edit"></div>
+      <div class="row"><button type="button" id="addwafer">+ Add wafer</button></div>
+      <p><button type="submit">Save</button><span class="msg" id="savemsg"></span></p>
+      <p class="msg">File: <span id="file"></span>, top cell: <span id="top"></span></p>
+    </form>
+  </section>
+
+  <section id="tab-cells" class="hidden">
+    <div class="row"><input id="cellq" type="search" placeholder="Search all cells"></div>
+    <div id="celltree"></div>
+  </section>
+
+  <section id="tab-wafers" class="hidden">
+    <p id="nowafers" class="msg">This chip has no wafers. Add one in the Info tab.</p>
+    <div id="waferui">
+      <div class="row">
+        <select id="wafer"></select>
+        <button data-mode="map" class="on">Map</button><button data-mode="table">Table</button>
+      </div>
+      <div id="legend"></div>
+      <div id="wafermap"></div>
+      <table id="dietable" class="hidden"><thead><tr><th>Die</th><th>Status</th><th>Notes</th></tr></thead><tbody></tbody></table>
+    </div>
+  </section>
+</aside>
+<div id="stage">
+  <canvas id="canvas"></canvas>
+  <div id="toolbar"><button id="fit">Fit</button><button id="clear">Clear highlight</button><span id="hlinfo" class="hidden"></span><span id="coords"></span></div>
+</div>
+<script src="chip.js"></script>
+</body>
+</html>

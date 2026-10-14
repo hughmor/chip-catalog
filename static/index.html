@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chip Catalog</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><h1 id="title">Chip Catalog</h1><input id="q" type="search" placeholder="Filter chips"></header>
+<main id="grid"></main>
+<script>
+const enc = encodeURIComponent;
+(async () => {
+  const [cfg, chips] = await Promise.all(['/api/config', '/api/chips'].map(u => fetch(u).then(r => r.json())));
+  document.title = document.getElementById('title').textContent = cfg.title;
+  const grid = document.getElementById('grid');
+  for (const c of chips) {
+    const a = document.createElement('a');
+    a.className = 'card';
+    a.href = `chip.html?id=${enc(c.id)}`;
+    a.dataset.text = [c.id, c.internal_name, c.designation, c.technology, c.run, c.notes, ...c.authors].join(' ').toLowerCase();
+    a.innerHTML = '<img loading="lazy" alt=""><div class="meta"><div class="name"></div><div class="sub"></div></div>';
+    a.querySelector('img').src = `/api/chips/${enc(c.id)}/thumb.png?v=${c.mtime}-${enc(c.technology)}`;
+    a.querySelector('.name').textContent = c.internal_name;
+    a.querySelector('.sub').textContent = [c.designation, c.technology, c.run].filter(Boolean).join(' · ') || c.file;
+    grid.append(a);
+  }
+  document.getElementById('q').oninput = e => {
+    const q = e.target.value.toLowerCase();
+    for (const a of grid.children) a.classList.toggle('hidden', !a.dataset.text.includes(q));
+  };
+})();
+</script>
+</body>
+</html>

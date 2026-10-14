@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.tmp
+# Lab data: keep it out of this repository
+catalog/
+.DS_Store
